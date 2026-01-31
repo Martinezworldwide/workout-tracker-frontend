@@ -296,14 +296,20 @@ async function handleWorkoutDelete(workoutId) {
 // Parse exercises from form
 function parseExercises(form) {
     const exercises = [];
-    const exerciseNames = form.querySelectorAll('[data-exercise-name]');
+    // Find all exercise containers
+    const exerciseContainers = form.querySelectorAll('[data-exercise-index]');
     
-    exerciseNames.forEach((nameInput, index) => {
+    exerciseContainers.forEach((exerciseContainer, index) => {
+        // Get exercise name from the input within this container
+        const nameInput = exerciseContainer.querySelector('[data-exercise-name]');
+        if (!nameInput) return;
+        
         const exerciseName = nameInput.value.trim();
         if (!exerciseName) return;
         
+        // Find all sets within this exercise container
         const sets = [];
-        const setInputs = form.querySelectorAll(`[data-exercise-index="${index}"][data-set]`);
+        const setInputs = exerciseContainer.querySelectorAll('[data-set]');
         
         setInputs.forEach(setInput => {
             const repsInput = setInput.querySelector('[data-reps]');
@@ -311,16 +317,24 @@ function parseExercises(form) {
             
             if (!repsInput || !weightInput) return;
             
-            const reps = parseInt(repsInput.value) || 0;
-            const weight = parseFloat(weightInput.value) || 0;
+            const repsValue = repsInput.value.trim();
+            const weightValue = weightInput.value.trim();
             
-            // Include sets even if reps/weight is 0 (user might want to track empty sets)
-            sets.push({ reps: Math.max(0, reps), weight: Math.max(0, weight) });
+            // Only parse if values are provided
+            if (repsValue || weightValue) {
+                const reps = repsValue ? parseInt(repsValue) : 0;
+                const weight = weightValue ? parseFloat(weightValue) : 0;
+                
+                // Only add set if it has at least one value
+                if (reps > 0 || weight > 0) {
+                    sets.push({ reps: Math.max(0, reps), weight: Math.max(0, weight) });
+                }
+            }
         });
         
-        // Include exercise if it has a name, even if sets are empty (validation will catch it)
-        if (exerciseName) {
-            exercises.push({ name: exerciseName, sets: sets.length > 0 ? sets : [{ reps: 0, weight: 0 }] });
+        // Only add exercise if it has at least one valid set
+        if (sets.length > 0) {
+            exercises.push({ name: exerciseName, sets });
         }
     });
     
