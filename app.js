@@ -402,7 +402,7 @@ function renderWorkoutList() {
                         </div>
                         <div class="workout-item-exercises">${workout.exercises.length} exercise(s)</div>
                     </div>
-                `).join('')}
+                `).join('') : ''}
             </div>
         </div>
     `;
