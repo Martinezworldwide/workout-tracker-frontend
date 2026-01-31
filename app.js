@@ -527,8 +527,8 @@ function renderWorkoutDetail(workout) {
                         <div class="sets-list">
                             ${exercise.sets.map(set => `
                                 <div class="set-item">
-                                    <span>${set.reps} reps</span>
-                                    <span>${set.weight} lbs</span>
+                                    <span>${Number(set.reps) || 0} reps</span>
+                                    <span>${Number(set.weight) || 0} lbs</span>
                                 </div>
                             `).join('')}
                         </div>
@@ -570,7 +570,7 @@ function renderStats() {
                     <div class="stat-label">Total Sets</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${stats.totalVolume || 0}</div>
+                    <div class="stat-value">${Number(stats.totalVolume || 0).toLocaleString()}</div>
                     <div class="stat-label">Total Volume (lbs)</div>
                 </div>
             </div>
