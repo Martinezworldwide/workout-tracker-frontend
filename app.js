@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = 'https://your-render-app.onrender.com'; // Update this with your Render backend URL
+const API_BASE_URL = 'https://workout-tracker-api-65eh.onrender.com';
 
 // Router state
 let currentView = 'login';
@@ -112,7 +112,7 @@ async function handleLogin(e) {
     const password = form.password.value;
     
     try {
-        const data = await apiCall('/auth/login', {
+        const data = await apiCall('/api/auth/login', {
             method: 'POST',
             body: JSON.stringify({ username, password })
         });
@@ -134,7 +134,7 @@ async function handleRegister(e) {
     const recoveryAnswer = form.recoveryAnswer.value;
     
     try {
-        await apiCall('/auth/register', {
+        await apiCall('/api/auth/register', {
             method: 'POST',
             body: JSON.stringify({
                 username,
@@ -164,7 +164,7 @@ function logout() {
 async function loadWorkouts() {
     const month = currentData.selectedMonth || getCurrentMonth();
     try {
-        const workouts = await apiCall(`/workouts?month=${month}`);
+        const workouts = await apiCall(`/api/workouts?month=${month}`);
         currentData.workouts = workouts;
         render();
     } catch (error) {
@@ -186,12 +186,12 @@ async function handleWorkoutSubmit(e) {
     
     try {
         if (workoutId) {
-            await apiCall(`/workouts/${workoutId}`, {
+            await apiCall(`/api/workouts/${workoutId}`, {
                 method: 'PUT',
                 body: JSON.stringify(workout)
             });
         } else {
-            await apiCall('/workouts', {
+            await apiCall('/api/workouts', {
                 method: 'POST',
                 body: JSON.stringify(workout)
             });
@@ -209,7 +209,7 @@ async function handleWorkoutDelete(workoutId) {
     }
     
     try {
-        await apiCall(`/workouts/${workoutId}`, {
+        await apiCall(`/api/workouts/${workoutId}`, {
             method: 'DELETE'
         });
         navigate('workout-list');
@@ -252,7 +252,7 @@ async function loadStats() {
     const to = currentData.statsTo || getLastDayOfMonth();
     
     try {
-        const stats = await apiCall(`/stats/summary?from=${from}&to=${to}`);
+        const stats = await apiCall(`/api/stats/summary?from=${from}&to=${to}`);
         currentData.stats = stats;
         render();
     } catch (error) {
