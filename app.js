@@ -5,6 +5,7 @@ const API_BASE_URL = 'https://workout-tracker-api-65eh.onrender.com';
 let currentView = 'login';
 let currentData = {};
 let isLoadingWorkouts = false; // Prevent infinite loop
+let isLoadingStats = false; // Prevent infinite loop for stats
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
@@ -81,7 +82,10 @@ function render() {
             break;
         case 'stats':
             app.innerHTML = renderStats();
-            loadStats();
+            // Only load stats if not already loading (prevents infinite loop)
+            if (!isLoadingStats) {
+                loadStats();
+            }
             break;
         default:
             app.innerHTML = renderLogin();
@@ -343,15 +347,27 @@ function parseExercises(form) {
 
 // Stats functions
 async function loadStats() {
+    // Prevent multiple simultaneous loads
+    if (isLoadingStats) {
+        return;
+    }
+    
+    isLoadingStats = true;
     const from = currentData.statsFrom || getFirstDayOfMonth();
     const to = currentData.statsTo || getLastDayOfMonth();
     
     try {
         const stats = await apiCall(`/api/stats/summary?from=${from}&to=${to}`);
         currentData.stats = stats;
-        render();
+        // Update DOM directly instead of calling render() to avoid loop
+        const app = document.getElementById('app');
+        if (app && currentView === 'stats') {
+            app.innerHTML = renderStats();
+        }
     } catch (error) {
         showError(error.message);
+    } finally {
+        isLoadingStats = false;
     }
 }
 
