@@ -4,6 +4,7 @@ const API_BASE_URL = 'https://workout-tracker-api-65eh.onrender.com';
 // Router state
 let currentView = 'login';
 let currentData = {};
+let isLoadingWorkouts = false; // Prevent infinite loop
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
@@ -64,7 +65,10 @@ function render() {
             break;
         case 'workout-list':
             app.innerHTML = renderWorkoutList();
-            loadWorkouts();
+            // Only load workouts if not already loading (prevents infinite loop)
+            if (!isLoadingWorkouts) {
+                loadWorkouts();
+            }
             break;
         case 'workout-add':
             app.innerHTML = renderWorkoutForm();
@@ -194,19 +198,38 @@ function logout() {
 
 // Workout functions
 async function loadWorkouts() {
+    // Prevent multiple simultaneous loads
+    if (isLoadingWorkouts) {
+        return;
+    }
+    
+    isLoadingWorkouts = true;
     const month = currentData.selectedMonth || getCurrentMonth();
+    
     // Show loading state
     currentData.workouts = null;
-    render();
+    // Update DOM directly instead of calling render() to avoid loop
+    const app = document.getElementById('app');
+    if (app && currentView === 'workout-list') {
+        app.innerHTML = renderWorkoutList();
+    }
     
     try {
         const workouts = await apiCall(`/api/workouts?month=${month}`);
         currentData.workouts = workouts;
-        render();
+        // Update DOM directly
+        if (app && currentView === 'workout-list') {
+            app.innerHTML = renderWorkoutList();
+        }
     } catch (error) {
         showError(error.message);
         currentData.workouts = [];
-        render();
+        // Update DOM directly
+        if (app && currentView === 'workout-list') {
+            app.innerHTML = renderWorkoutList();
+        }
+    } finally {
+        isLoadingWorkouts = false;
     }
 }
 
