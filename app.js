@@ -9,8 +9,37 @@ let isLoadingStats = false; // Prevent infinite loop for stats
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    checkAuth();
-    render();
+    // Check for OAuth callback token in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const oauthToken = urlParams.get('token');
+    const oauthUsername = urlParams.get('username');
+    const oauthError = urlParams.get('error');
+    
+    if (oauthToken && oauthUsername) {
+        // OAuth login successful
+        localStorage.setItem('token', oauthToken);
+        localStorage.setItem('user', JSON.stringify({ username: oauthUsername }));
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        currentView = 'workout-list';
+        currentData.user = { username: oauthUsername };
+        render();
+    } else if (oauthError) {
+        // OAuth login failed
+        window.history.replaceState({}, document.title, window.location.pathname);
+        checkAuth();
+        render();
+        if (oauthError === 'oauth_cancelled') {
+            showError('Sign-in was cancelled');
+        } else if (oauthError === 'oauth_not_configured') {
+            showError('OAuth sign-in is not configured');
+        } else {
+            showError('Sign-in failed. Please try again or use regular login.');
+        }
+    } else {
+        checkAuth();
+        render();
+    }
     
     // Keep Render service warm by pinging health endpoint every 10 minutes
     // This prevents cold starts on the free tier
@@ -390,6 +419,20 @@ function renderLogin() {
                     <button type="button" class="btn btn-secondary" onclick="navigate('register')">Register</button>
                 </div>
             </form>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                <p style="text-align: center; color: #666; margin-bottom: 15px;">Or sign in with:</p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button type="button" class="btn" style="background: #4285f4; color: white;" onclick="handleGoogleSignIn()">
+                        <span style="margin-right: 8px;">🔵</span> Google
+                    </button>
+                    <button type="button" class="btn" style="background: #000; color: white;" onclick="handleAppleSignIn()">
+                        <span style="margin-right: 8px;">⚫</span> Apple
+                    </button>
+                </div>
+                <p style="text-align: center; font-size: 12px; color: #999; margin-top: 10px;">
+                    OAuth sign-in is optional and only used for convenience
+                </p>
+            </div>
         </div>
     `;
 }
@@ -704,6 +747,15 @@ function addSet(exerciseIndex) {
     setsList.insertBefore(setDiv, setsList.lastElementChild);
 }
 
+// OAuth handlers
+function handleGoogleSignIn() {
+    window.location.href = `${API_BASE_URL}/api/oauth/google`;
+}
+
+function handleAppleSignIn() {
+    window.location.href = `${API_BASE_URL}/api/oauth/apple`;
+}
+
 // Expose functions to global scope for inline handlers
 window.navigate = navigate;
 window.handleLogin = handleLogin;
@@ -715,3 +767,5 @@ window.handleWorkoutDelete = handleWorkoutDelete;
 window.loadStats = loadStats;
 window.addExercise = addExercise;
 window.addSet = addSet;
+window.handleGoogleSignIn = handleGoogleSignIn;
+window.handleAppleSignIn = handleAppleSignIn;
