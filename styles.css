@@ -241,6 +241,18 @@ body {
     font-weight: 600;
     margin-bottom: 10px;
     color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.exercise-volume {
+    font-size: 14px;
+    font-weight: 500;
+    color: #667eea;
+    background: #e9ecef;
+    padding: 4px 12px;
+    border-radius: 5px;
 }
 
 .sets-list {

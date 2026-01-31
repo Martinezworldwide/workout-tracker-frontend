@@ -523,6 +523,41 @@ function renderWorkoutDetail(workout) {
         return '';
     }
     
+    // Calculate workout total volume
+    let workoutTotalVolume = 0;
+    
+    const exercisesHtml = workout.exercises.map(exercise => {
+        // Calculate exercise total volume
+        let exerciseTotalVolume = 0;
+        
+        const setsHtml = exercise.sets.map(set => {
+            const reps = Number(set.reps) || 0;
+            const weight = Number(set.weight) || 0;
+            const setVolume = reps * weight;
+            exerciseTotalVolume += setVolume;
+            
+            return `
+                <div class="set-item">
+                    <span>${reps} reps × ${weight} lbs = <strong>${setVolume.toLocaleString()} lbs</strong></span>
+                </div>
+            `;
+        }).join('');
+        
+        workoutTotalVolume += exerciseTotalVolume;
+        
+        return `
+            <div class="exercise-item">
+                <div class="exercise-name">
+                    ${escapeHtml(exercise.name)}
+                    <span class="exercise-volume">Total: ${exerciseTotalVolume.toLocaleString()} lbs</span>
+                </div>
+                <div class="sets-list">
+                    ${setsHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+    
     return `
         <div class="header">
             <h1>Workout Details</h1>
@@ -536,20 +571,13 @@ function renderWorkoutDetail(workout) {
             <h2>${escapeHtml(workout.name)}</h2>
             <p><strong>Date:</strong> ${formatDate(workout.date)}</p>
             ${workout.notes ? `<p><strong>Notes:</strong> ${escapeHtml(workout.notes)}</p>` : ''}
+            <div class="workout-summary" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 18px; font-weight: 600; color: #667eea;">
+                    <strong>Total Workout Volume: ${workoutTotalVolume.toLocaleString()} lbs</strong>
+                </p>
+            </div>
             <div class="exercise-list">
-                ${workout.exercises.map(exercise => `
-                    <div class="exercise-item">
-                        <div class="exercise-name">${escapeHtml(exercise.name)}</div>
-                        <div class="sets-list">
-                            ${exercise.sets.map(set => `
-                                <div class="set-item">
-                                    <span>${Number(set.reps) || 0} reps</span>
-                                    <span>${Number(set.weight) || 0} lbs</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `).join('')}
+                ${exercisesHtml}
             </div>
         </div>
     `;
