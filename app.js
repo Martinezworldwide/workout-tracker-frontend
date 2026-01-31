@@ -9,6 +9,16 @@ let currentData = {};
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     render();
+    
+    // Keep Render service warm by pinging health endpoint every 10 minutes
+    // This prevents cold starts on the free tier
+    setInterval(async () => {
+        try {
+            await fetch(`${API_BASE_URL}/health`).catch(() => {});
+        } catch (e) {
+            // Silently fail - just trying to keep service warm
+        }
+    }, 10 * 60 * 1000); // Every 10 minutes
 });
 
 // Check if user is authenticated
@@ -185,12 +195,18 @@ function logout() {
 // Workout functions
 async function loadWorkouts() {
     const month = currentData.selectedMonth || getCurrentMonth();
+    // Show loading state
+    currentData.workouts = null;
+    render();
+    
     try {
         const workouts = await apiCall(`/api/workouts?month=${month}`);
         currentData.workouts = workouts;
         render();
     } catch (error) {
         showError(error.message);
+        currentData.workouts = [];
+        render();
     }
 }
 
@@ -198,6 +214,14 @@ async function handleWorkoutSubmit(e) {
     e.preventDefault();
     const form = e.target;
     const workoutId = form.dataset.workoutId;
+    
+    // Disable submit button and show loading
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn?.textContent;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+    }
     
     const workout = {
         date: form.date.value,
@@ -222,6 +246,12 @@ async function handleWorkoutSubmit(e) {
         navigate('workout-list');
     } catch (error) {
         showError(error.message);
+    } finally {
+        // Re-enable button
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
     }
 }
 
@@ -362,8 +392,9 @@ function renderWorkoutList() {
                 <button class="btn btn-primary" onclick="navigate('workout-add')">Add Workout</button>
             </div>
             <div class="workout-list">
-                ${workouts.length === 0 ? '<p>No workouts found for this month.</p>' : ''}
-                ${workouts.map(workout => `
+                ${workouts === null ? '<div class="loading"><div class="spinner"></div><p>Loading workouts...</p></div>' : ''}
+                ${workouts !== null && workouts.length === 0 ? '<p>No workouts found for this month.</p>' : ''}
+                ${workouts !== null && workouts.length > 0 ? workouts.map(workout => `
                     <div class="workout-item" onclick="navigate('workout-detail', { workout: ${JSON.stringify(workout).replace(/"/g, '&quot;')} })">
                         <div class="workout-item-header">
                             <div class="workout-item-name">${escapeHtml(workout.name)}</div>
