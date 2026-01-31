@@ -92,19 +92,37 @@ async function apiCall(endpoint, options = {}) {
             headers
         });
         
-        const data = await response.json();
+        // Check content type before parsing JSON
+        const contentType = response.headers.get('content-type');
+        let data;
+        
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            // Handle non-JSON responses (like rate limit plain text)
+            const text = await response.text();
+            if (response.status === 429) {
+                throw new Error('Too many requests. Please wait a moment and try again.');
+            }
+            throw new Error(text || 'Request failed');
+        }
         
         if (!response.ok) {
             // Handle rate limiting specifically
             if (response.status === 429) {
-                throw new Error('Too many requests. Please wait a moment and try again.');
+                throw new Error(data.message || 'Too many requests. Please wait a moment and try again.');
             }
             throw new Error(data.message || 'Request failed');
         }
         
         return data;
     } catch (error) {
-        throw error;
+        // Re-throw if it's already an Error with message
+        if (error instanceof Error) {
+            throw error;
+        }
+        // Otherwise wrap in Error
+        throw new Error(error.message || 'Request failed');
     }
 }
 
