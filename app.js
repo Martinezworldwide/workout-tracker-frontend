@@ -253,15 +253,21 @@ function parseExercises(form) {
         const setInputs = form.querySelectorAll(`[data-exercise-index="${index}"][data-set]`);
         
         setInputs.forEach(setInput => {
-            const reps = parseInt(setInput.querySelector('[data-reps]').value) || 0;
-            const weight = parseFloat(setInput.querySelector('[data-weight]').value) || 0;
-            if (reps > 0 || weight > 0) {
-                sets.push({ reps, weight });
-            }
+            const repsInput = setInput.querySelector('[data-reps]');
+            const weightInput = setInput.querySelector('[data-weight]');
+            
+            if (!repsInput || !weightInput) return;
+            
+            const reps = parseInt(repsInput.value) || 0;
+            const weight = parseFloat(weightInput.value) || 0;
+            
+            // Include sets even if reps/weight is 0 (user might want to track empty sets)
+            sets.push({ reps: Math.max(0, reps), weight: Math.max(0, weight) });
         });
         
-        if (sets.length > 0) {
-            exercises.push({ name: exerciseName, sets });
+        // Include exercise if it has a name, even if sets are empty (validation will catch it)
+        if (exerciseName) {
+            exercises.push({ name: exerciseName, sets: sets.length > 0 ? sets : [{ reps: 0, weight: 0 }] });
         }
     });
     
