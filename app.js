@@ -29,12 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
         window.history.replaceState({}, document.title, window.location.pathname);
         checkAuth();
         render();
+        const decodedError = decodeURIComponent(oauthError);
         if (oauthError === 'oauth_cancelled') {
             showError('Sign-in was cancelled');
         } else if (oauthError === 'oauth_not_configured') {
             showError('OAuth sign-in is not configured');
         } else {
-            showError('Sign-in failed. Please try again or use regular login.');
+            // Show the actual error message from backend for debugging
+            showError(`Sign-in failed: ${decodedError}. Please try again or use regular login.`);
+            console.error('OAuth error details:', decodedError);
         }
     } else {
         checkAuth();
